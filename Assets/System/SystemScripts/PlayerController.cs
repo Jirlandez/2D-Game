@@ -94,6 +94,7 @@ public class PlayerController : MonoBehaviour
     // Movement
     private PlayerMovementValues currentMovementState;
     private bool isInWater = false;
+    private bool wasInWater = false;
 
     // Jump
     private PlayerJumpValues currentJumpValues;
@@ -208,7 +209,11 @@ public class PlayerController : MonoBehaviour
         CheckWallStates(moveDirection);
         DetermineMovementState();
 
-        if (controlEnabled && (isCrouching && !isInWater))
+        if (controlEnabled && isCharging)
+        {
+            rigidbody2D.linearVelocityX *= 0.85f;
+        }
+        else if (controlEnabled && (isCrouching && !isInWater))
         {
             SetFriction(currentMovementState.crouchFriction);
         }
@@ -308,6 +313,12 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        if (isInWater && !wasInWater)
+        {
+            highestPosition = transform.position.y;
+        }
+        wasInWater = isInWater;
+
         if (onGroundLastFrame && !isOnGround)
         {
             lastOnGroundTime = Time.time;
@@ -343,11 +354,19 @@ public class PlayerController : MonoBehaviour
     */
     private void CheckWallStates(Vector2 moveDirection)
     {
+        if (IsOnGround())
+        {
+            onWallLeft = false;
+            onWallRight = false;
+            return;
+        }
+
         bool wasOnWallLeft = onWallLeft;
         Physics2D.queriesHitTriggers = false;
         Vector3 worldCenter = systemVariables.leftWallChecker.transform.TransformPoint(systemVariables.leftWallChecker.offset);
         Vector3 worldHalfExtents = systemVariables.leftWallChecker.transform.TransformVector(systemVariables.leftWallChecker.size * 0.5f);
-        onWallLeft = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.leftWallChecker.transform.rotation.z, systemVariables.groundMask);
+        bool touchingLeftWall = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.leftWallChecker.transform.rotation.z, systemVariables.groundMask);
+        onWallLeft = touchingLeftWall && moveDirection.x < -0.1f;
         if (!wasOnWallLeft && onWallLeft)
         {
             if (!IsOnGround() && moveDirection != Vector2.zero && systemVariables.leftWallHitParticle != null) systemVariables.leftWallHitParticle.Play();
@@ -364,7 +383,8 @@ public class PlayerController : MonoBehaviour
         bool wasOnWallRight = onWallRight;
         worldCenter = systemVariables.rightWallChecker.transform.TransformPoint(systemVariables.rightWallChecker.offset);
         worldHalfExtents = systemVariables.rightWallChecker.transform.TransformVector(systemVariables.rightWallChecker.size * 0.5f);
-        onWallRight = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.rightWallChecker.transform.rotation.z, systemVariables.groundMask);
+        bool touchingRightWall = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.rightWallChecker.transform.rotation.z, systemVariables.groundMask);
+        onWallRight = touchingRightWall && moveDirection.x > 0.1f;
         if (!wasOnWallRight && onWallRight)
         {
             if (!IsOnGround() && moveDirection != Vector2.zero && systemVariables.rightWallHitParticle != null) systemVariables.rightWallHitParticle.Play();
@@ -386,6 +406,7 @@ public class PlayerController : MonoBehaviour
 
     private bool IsTryingToStop(Vector2 moveDirection)
     {
+        if (isCharging) return false;
         if (!IsOnWall() && moveDirection == Vector2.zero) return true;
         if (!IsOnGround() && onWallLeft && moveDirection.x < -0.1f) return true;
         if (!IsOnGround() && onWallRight && moveDirection.x > 0.1f) return true;
@@ -845,7 +866,7 @@ public class PlayerSystemVariables
     public GameObject spritesParent;
     public SpriteRenderer[] flipSprites;
     [HideInInspector]
-    public float waitToResetCameraAfterDeath = 2;
+    public float waitToResetCameraAfterDeath = 0.5f;
     [HideInInspector]
     public float sfxVolume = 1;
     [HideInInspector]
