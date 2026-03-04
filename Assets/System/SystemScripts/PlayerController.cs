@@ -354,7 +354,7 @@ public class PlayerController : MonoBehaviour
     */
     private void CheckWallStates(Vector2 moveDirection)
     {
-        if (IsOnGround())
+        if (isOnGround)
         {
             onWallLeft = false;
             onWallRight = false;
@@ -408,8 +408,8 @@ public class PlayerController : MonoBehaviour
     {
         if (isCharging) return false;
         if (!IsOnWall() && moveDirection == Vector2.zero) return true;
-        if (!IsOnGround() && onWallLeft && moveDirection.x < -0.1f) return true;
-        if (!IsOnGround() && onWallRight && moveDirection.x > 0.1f) return true;
+        if (!isOnGround && onWallLeft && moveDirection.x < -0.1f) return true;
+        if (!isOnGround && onWallRight && moveDirection.x > 0.1f) return true;
         return false;
     }
 
