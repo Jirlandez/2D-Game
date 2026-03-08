@@ -1,12 +1,14 @@
 using UnityEngine;
 using System.Collections;
 
+
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
 [SelectionBase]
 public class PlayerController : MonoBehaviour
 {
     public static PlayerController instance;
+
 
     [Space]
     [Header("Movement")]
@@ -21,27 +23,18 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Fall death height")]
     public int fallDeath = 10;
 
+
     [Space]
     [Header("Jumping")]
     [Tooltip("The default stats for performing a jump.")]
     public PlayerJumpValues jumpValues;
     [Tooltip("How many seconds the player can be in the air after running off a ledge, and still jump.")]
-    public float coyoteTime = 0.0f;
+    public float coyoteTime = 0.5f;
     [Tooltip("How many seconds the player can press the jump button before they touch the ground, and have it still count as a jump.")]
     public float jumpQueueTime = 0.1f;
     [Tooltip("The maximum upwards speed a player can achieve.")]
     public float maxJumpSpeed = 100f;
 
-    //Added stuff
-    [Tooltip("The maximum amount of time until a full jump is charged.")]
-    public float maxChargeTime = 1.0f;
-    [Tooltip("The minimum strength a jump can be.")]
-    public float minCharge = 0.3f;
-    [Tooltip("The timer for the charge jump.")]
-    private float jumpChargeTimer = 0;
-    private bool isCharging = false;
-    private Vector3 previousPosition;
-    private float highestPosition;
 
     [Space]
     [Header("Double Jumping")]
@@ -49,6 +42,7 @@ public class PlayerController : MonoBehaviour
     public int doubleJumps = 1;
     [Tooltip("The physics of each subsequent double jump the player does. If the player can perform more double jumps than this list has, the player will continuously use the last value in the list.")]
     public PlayerJumpValues[] doubleJumpValues = new PlayerJumpValues[1];
+
 
     [Space]
     [Header("Wall Jumping")]
@@ -59,12 +53,14 @@ public class PlayerController : MonoBehaviour
     [Tooltip("The stats for performing a jump while sliding on a wall.")]
     public PlayerWallJumpValues wallJumpValues;
 
+
     [Space]
     [Header("Crouching")]
     [Tooltip("Whether or not the player can crouch.")]
     public bool allowCrouch = true;
     [Tooltip("How high the player's collider is when crouching. This is used to slide under objects.")]
     public float crouchColliderHeight = 0.2f;
+
 
     [Space]
     [Header("Miscellaneous")]
@@ -76,6 +72,7 @@ public class PlayerController : MonoBehaviour
     public AudioClip bumpSound;
     [Tooltip("The sound that plays when the player dies.")]
     public AudioClip deathSound;
+
 
     // System Variables
     [Space]
@@ -91,10 +88,24 @@ public class PlayerController : MonoBehaviour
     private bool isFacingLeft = false;
     private Animator[] animators;
 
+
     // Movement
     private PlayerMovementValues currentMovementState;
     private bool isInWater = false;
     private bool wasInWater = false;
+    private Vector3 previousPosition;
+    private float highestPosition;
+    private bool firstTime = true;
+
+    // CHARGE JUMP - Comment out to disable
+    [Tooltip("The maximum amount of time until a full jump is charged.")]
+    public float maxChargeTime = 1.0f;
+    [Tooltip("The minimum strength a jump can be.")]
+    public float minCharge = 0.3f;
+    [Tooltip("The timer for the charge jump.")]
+    private float jumpChargeTimer = 0;
+    private bool isCharging = false;
+
 
     // Jump
     private PlayerJumpValues currentJumpValues;
@@ -107,21 +118,24 @@ public class PlayerController : MonoBehaviour
     private int jumpsSinceGroundTouch = 0;
     private Transform currentSpawnPoint;
     private Transform startSpawnPoint;
-    private bool firstTime = true;
+
 
     // Crouching
     private bool isCrouching = false;
     private Vector2 originalColliderSize = Vector2.one;
     private Vector2 originalColliderOffset = Vector2.zero;
 
+
     // Sound
     private float bumpSoundVolume = 0.2f;
     private float bumpMinimumImpulse = 7f;
+
 
     // Component References
     private Rigidbody2D rigidbody2D;
     private BoxCollider2D collider2D;
     private AudioSource audioSource;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Awake()
@@ -138,10 +152,13 @@ public class PlayerController : MonoBehaviour
         collider2D = GetComponent<BoxCollider2D>();
         audioSource = GetComponentInChildren<AudioSource>();
 
+
         currentMovementState = groundMovementValues;
+
 
         originalColliderSize = collider2D.size;
         originalColliderOffset = collider2D.offset;
+
 
         startSpawnPoint = new GameObject().transform;
         startSpawnPoint.position = transform.position;
@@ -150,6 +167,7 @@ public class PlayerController : MonoBehaviour
         animators = GetComponentsInChildren<Animator>(true);
     }
 
+
     void Update()
     {
         moveDirection = new Vector2(
@@ -157,6 +175,7 @@ public class PlayerController : MonoBehaviour
             Input.GetAxisRaw("Vertical")
         );
 
+        // CHARGE JUMP
         if (isCharging)
         {
             jumpChargeTimer += Time.deltaTime;
@@ -164,7 +183,7 @@ public class PlayerController : MonoBehaviour
             moveDirection.x = 0; 
         }
 
-        if (Input.GetButtonDown("Jump"))
+        if(Input.GetButtonDown("Jump"))
         {
             JumpButtonPressed();
         }
@@ -172,6 +191,7 @@ public class PlayerController : MonoBehaviour
         {
             JumpButtonReleased();
         }
+
 
         CheckIfCrouching();
 
@@ -202,6 +222,8 @@ public class PlayerController : MonoBehaviour
     }
 
 
+
+
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -209,6 +231,7 @@ public class PlayerController : MonoBehaviour
         CheckWallStates(moveDirection);
         DetermineMovementState();
 
+        // CHARGE JUMP - slow down while charging
         if (controlEnabled && isCharging)
         {
             rigidbody2D.linearVelocityX *= 0.85f;
@@ -227,12 +250,14 @@ public class PlayerController : MonoBehaviour
         {
             SetFriction(currentMovementState.stopFriction);
         }
-        /*
+
+
         if ((IsOnGround() || (resetDoubleJumpsOnWall && allowWallJump && IsOnWall())) && (Time.time - lastJumpTime) > jumpStartedThreshold)
         {
             jumpsSinceGroundTouch = 0;
         }
-        
+
+
         if (controlEnabled && jumpQueued)
         {
             if (CanJump() && (Time.time - lastJumpQueueTime) < jumpQueueTime)
@@ -242,18 +267,23 @@ public class PlayerController : MonoBehaviour
                 PerformJump();
             }
         }
-        */
+
+
         DetermineGravityScale();
+
 
         rigidbody2D.linearVelocity = new Vector2(
             Mathf.Clamp(rigidbody2D.linearVelocity.x, -currentMovementState.maxSpeed, currentMovementState.maxSpeed),
             Mathf.Clamp(rigidbody2D.linearVelocity.y, -currentMovementState.maxFallSpeed, maxJumpSpeed)
         );
 
+
         SetAnimatorStates();
+
 
         if (transform.position.y < deathHeight) Respawn();
     }
+
 
     private void SetFriction(float aFriction)
     {
@@ -271,7 +301,10 @@ public class PlayerController : MonoBehaviour
     }
 
 
+
+
     // --------- Movement States ---------
+
 
     private void DetermineMovementState()
     {
@@ -290,6 +323,7 @@ public class PlayerController : MonoBehaviour
             currentMovementState = airMovementValues;
         }
     }
+
 
     private void CheckGroundState()
     {
@@ -324,6 +358,7 @@ public class PlayerController : MonoBehaviour
             lastOnGroundTime = Time.time;
         }
 
+
         if (!onGroundLastFrame && isOnGround)
         {
             lastLandTime = Time.time;
@@ -342,19 +377,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private bool IsOnGround()
     {
         return isOnGround;
     }
-    /*
+
+
     private bool IsOnGroundWithCoyoteTime()
     {
         return IsOnGround() || ((jumpsSinceGroundTouch <= 0) && (Time.time - lastOnGroundTime) < coyoteTime);
     }
-    */
+
+
     private void CheckWallStates(Vector2 moveDirection)
     {
+        // Use cached isOnGround to avoid corner issues where IsOnGround() briefly returns false
         if (isOnGround)
+        {
+            onWallLeft = false;
+            onWallRight = false;
+            return;
+        }
+
+        // CHARGE JUMP - skip wall detection while charging to prevent corner sticking
+        if (isCharging)
         {
             onWallLeft = false;
             onWallRight = false;
@@ -365,8 +412,7 @@ public class PlayerController : MonoBehaviour
         Physics2D.queriesHitTriggers = false;
         Vector3 worldCenter = systemVariables.leftWallChecker.transform.TransformPoint(systemVariables.leftWallChecker.offset);
         Vector3 worldHalfExtents = systemVariables.leftWallChecker.transform.TransformVector(systemVariables.leftWallChecker.size * 0.5f);
-        bool touchingLeftWall = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.leftWallChecker.transform.rotation.z, systemVariables.groundMask);
-        onWallLeft = touchingLeftWall && moveDirection.x < -0.1f;
+        onWallLeft = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.leftWallChecker.transform.rotation.z, systemVariables.groundMask);
         if (!wasOnWallLeft && onWallLeft)
         {
             if (!IsOnGround() && moveDirection != Vector2.zero && systemVariables.leftWallHitParticle != null) systemVariables.leftWallHitParticle.Play();
@@ -380,11 +426,11 @@ public class PlayerController : MonoBehaviour
             systemVariables.leftWallSlideParticle.Stop();
         }
 
+
         bool wasOnWallRight = onWallRight;
         worldCenter = systemVariables.rightWallChecker.transform.TransformPoint(systemVariables.rightWallChecker.offset);
         worldHalfExtents = systemVariables.rightWallChecker.transform.TransformVector(systemVariables.rightWallChecker.size * 0.5f);
-        bool touchingRightWall = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.rightWallChecker.transform.rotation.z, systemVariables.groundMask);
-        onWallRight = touchingRightWall && moveDirection.x > 0.1f;
+        onWallRight = Physics2D.OverlapBox(worldCenter, worldHalfExtents, systemVariables.rightWallChecker.transform.rotation.z, systemVariables.groundMask);
         if (!wasOnWallRight && onWallRight)
         {
             if (!IsOnGround() && moveDirection != Vector2.zero && systemVariables.rightWallHitParticle != null) systemVariables.rightWallHitParticle.Play();
@@ -399,10 +445,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private bool IsOnWall()
     {
         return onWallLeft || onWallRight;
     }
+
 
     private bool IsTryingToStop(Vector2 moveDirection)
     {
@@ -412,6 +460,7 @@ public class PlayerController : MonoBehaviour
         if (!isOnGround && onWallRight && moveDirection.x > 0.1f) return true;
         return false;
     }
+
 
     private void DetermineGravityScale()
     {
@@ -433,6 +482,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     void OnCollisionEnter2D(Collision2D other)
     {
         CheckCollisionImpulse(other);
@@ -441,6 +491,7 @@ public class PlayerController : MonoBehaviour
     {
         CheckCollisionImpulse(other);
     }
+
 
     private void CheckCollisionImpulse(Collision2D other)
     {
@@ -458,14 +509,18 @@ public class PlayerController : MonoBehaviour
     }
 
 
+
+
     // --------- Jumping ---------
+
 
     private bool CanJump()
     {
-        return IsOnGround()
-            || (IsOnWall() && allowWallJump);
-            //|| (jumpsSinceGroundTouch <= GetAvailableJumps() && !isInWater);
+        return IsOnGroundWithCoyoteTime()
+            || (IsOnWall() && allowWallJump)
+            || (jumpsSinceGroundTouch <= GetAvailableJumps() && !isInWater);
     }
+
 
     private int GetAvailableJumps()
     {
@@ -479,23 +534,23 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void DetermineJumpValues()
     {
         if (!IsOnGround() && IsOnWall())
         {
             currentJumpValues = wallJumpValues;
         }
-        
-        else if (IsOnGround()) 
+        else if (IsOnGroundWithCoyoteTime()) 
         {
             currentJumpValues = jumpValues;
-        } 
-        
-        else 
+        }
+        else // Air Multi Jumps
         {
             currentJumpValues = doubleJumpValues[Mathf.Clamp(jumpsSinceGroundTouch - 1, 0, doubleJumpValues.Length - 1)];
         }
     }
+
 
     private void PerformJump()
     {
@@ -515,7 +570,7 @@ public class PlayerController : MonoBehaviour
                 rigidbody2D.AddForce(new Vector3(wallJumpValues.horizontalJumpForce, 0, 0));
             }
         }
-        if (IsOnGround()) jumpedOffGround = true;
+        if (IsOnGroundWithCoyoteTime()) jumpedOffGround = true;
         isJumping = true;
         lastJumpTime = Time.time;
         jumpsSinceGroundTouch++;
@@ -526,6 +581,7 @@ public class PlayerController : MonoBehaviour
             );
     }
 
+
     private void QueueJump()
     {
         jumpQueued = true;
@@ -533,7 +589,67 @@ public class PlayerController : MonoBehaviour
     }
 
 
+
+ 
     // --------- Input ---------
+    // ORIGINAL JUMP (commented out for charge jump):
+    // public void JumpButtonPressed()
+    // {
+    //     if (controlEnabled)
+    //     {
+    //         QueueJump();
+    //     }
+    // }
+
+    // CHARGE JUMP
+    public void JumpButtonPressed()
+    {
+        if (!controlEnabled) return;
+
+        if (!IsOnGround() && CanJump() && jumpsSinceGroundTouch < 2)
+        {
+            DetermineJumpValues();
+            PerformJump();
+            return; 
+        }
+
+        if (IsOnGround())
+        {
+            jumpsSinceGroundTouch = 0;
+            isCharging = true;
+            jumpChargeTimer = 0;
+        }
+    }
+
+
+    // ORIGINAL JUMP (commented out for charge jump):
+    // public void JumpButtonReleased()
+    // {
+    //     isJumping = false;
+    //     rigidbody2D.gravityScale = currentMovementState.fallGravity;
+    //     lastJumpDuration = Time.time - lastJumpTime;
+    //     ResetAnimatorTrigger("jump");
+    // }
+
+    // CHARGE JUMP
+    public void JumpButtonReleased()
+    {
+        if (isCharging)
+        {
+            if (IsOnGround())
+            {
+                DoChargeJump();
+            }
+            isCharging = false;
+            jumpChargeTimer = 0;
+        }
+        isJumping = false;
+        rigidbody2D.gravityScale = currentMovementState.fallGravity;
+        lastJumpDuration = Time.time - lastJumpTime;
+        ResetAnimatorTrigger("jump");
+    }
+
+    // CHARGE JUMP METHOD
     private void DoChargeJump()
     {
         DetermineJumpValues(); 
@@ -560,42 +676,7 @@ public class PlayerController : MonoBehaviour
         PlaySfx(jumpSound, Random.Range(0.9f, 1.1f));
     }
 
-    public void JumpButtonPressed()
-    {
-        if (!controlEnabled) return;
-
-        if (!IsOnGround() && CanJump() && jumpsSinceGroundTouch < 2)
-        {
-            DetermineJumpValues();
-            PerformJump();
-            return; 
-        }
-
-        if (IsOnGround())
-        {
-            jumpsSinceGroundTouch = 0;
-            isCharging = true;
-            jumpChargeTimer = 0;
-        }
-    }
-
-    public void JumpButtonReleased()
-    {
-        if (isCharging)
-        {
-            if (IsOnGround())
-            {
-                DoChargeJump();
-            }
-            isCharging = false;
-            jumpChargeTimer = 0;
-        }
-        isJumping = false;
-        rigidbody2D.gravityScale = currentMovementState.fallGravity;
-        lastJumpDuration = Time.time - lastJumpTime;
-        ResetAnimatorTrigger("jump");
-    }
-
+ 
     public void CheckIfCrouching()
     {
         if (controlEnabled && allowCrouch && !isCrouching && moveDirection.y < 0)
@@ -620,7 +701,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     // --------- Spawning ---------
+
 
     public void Respawn()
     {
@@ -631,6 +714,7 @@ public class PlayerController : MonoBehaviour
         StartCoroutine((ResetCameraCoroutine()));
         PlaySfx(deathSound, 1);
 
+
         if (currentSpawnPoint != null)
         {
             transform.position = currentSpawnPoint.position;
@@ -640,6 +724,7 @@ public class PlayerController : MonoBehaviour
             transform.position = startSpawnPoint.position;
         }
     }
+
 
     private IEnumerator ResetCameraCoroutine()
     {
@@ -655,13 +740,17 @@ public class PlayerController : MonoBehaviour
         EnablePlayerControl(true);
     }
 
+
     public void SetSpawnPoint(Transform aPoint)
     {
         currentSpawnPoint = aPoint;
     }
 
 
+
+
     // --------- Animation ---------
+
 
     private void SetAnimatorStates()
     {
@@ -679,6 +768,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void SetAnimatorTrigger(string aTrigger)
     {
         foreach (Animator each in animators)
@@ -686,6 +776,7 @@ public class PlayerController : MonoBehaviour
             if (each != null && each.gameObject.activeInHierarchy) each.SetTrigger(aTrigger);
         }
     }
+
 
     private void ResetAnimatorTrigger(string aTrigger)
     {
@@ -695,6 +786,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void SetAnimatorBool(string aBoolName, bool aBoolValue)
     {
         foreach (Animator each in animators)
@@ -702,6 +794,7 @@ public class PlayerController : MonoBehaviour
             if (each != null && each.gameObject.activeInHierarchy) each.SetBool(aBoolName, aBoolValue);
         }
     }
+
 
     private void SetAnimatorFloat(string aName, float aValue)
     {
@@ -711,6 +804,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void SetAnimatorInt(string aName, int aValue)
     {
         foreach (Animator each in animators)
@@ -719,17 +813,21 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     public bool IsFalling()
     {
         return rigidbody2D.linearVelocityY < 0;
     }
+
 
     public bool IsFacingLeft()
     {
         return isFacingLeft;
     }
 
+
     // --------- Audio ---------
+
 
     private void PlaySfx(AudioClip clip, float pitch)
     {
@@ -740,6 +838,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     private void PlayBumpSound()
     {
         if(audioSource != null && bumpSound != null)
@@ -749,7 +848,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     // --------- External Manipulation ---------
+
 
     public void EnablePlayerControl(bool enable)
     {
@@ -762,40 +863,48 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+
     public void SetDoubleJumpCount(int amount)
     {
         doubleJumps = amount;
     }
+
 
     public void AdjustDoubleJumpCount(int amount)
     {
         doubleJumps += amount;
     }
 
+
     public void EnableCrouch(bool enable)
     {
         allowCrouch = enable;
     }
+
 
     public void EnableWallJump(bool enable)
     {
         allowWallJump = enable;
     }
 
+
     public void EnableWallsResetDoubleJumps(bool enable)
     {
         resetDoubleJumpsOnWall = enable;
     }
+
 
     public void EnableSwim(bool enable)
     {
         canSwim = enable;
     }
 
+
     public void RefreshDoubleJumps()
     {
         jumpsSinceGroundTouch = 0;
     }
+
 
     void OnDrawGizmos()
     {
@@ -804,6 +913,7 @@ public class PlayerController : MonoBehaviour
         Gizmos.DrawLine(new Vector3(-5000, deathHeight, 0), new Vector3(5000, deathHeight, 0));
     }
 }
+
 
 [System.Serializable]
 public class PlayerMovementValues
@@ -821,12 +931,14 @@ public class PlayerMovementValues
     [Tooltip("The maximum left/right speed the player can achieve.")]
     public float maxSpeed = 16f;
 
+
     [Space]
     [Header("Falling")]
     [Tooltip("How much gravity the player experiences.")]
     public float fallGravity = 3f;
     [Tooltip("The maximum downwards speed the player can achieve.")]
     public float maxFallSpeed = 50f;
+
 
     [Space]
     [Header("Crouching")]
@@ -835,6 +947,7 @@ public class PlayerMovementValues
     [Tooltip("The gravity the player experiences when crouching. Use a high number to fast fall while holding down.")]
     public float crouchGravity = 12f;
 }
+
 
 [System.Serializable]
 public class PlayerJumpValues
@@ -849,12 +962,14 @@ public class PlayerJumpValues
     public float airHangGravity = 1.7f;
 }
 
+
 [System.Serializable]
 public class PlayerWallJumpValues : PlayerJumpValues
 {
     [Tooltip("The amount of outwards force the player experiences when jumping while sliding on a wall. Use a high number to encourage left/right wall jumping, or a low number to encourage wall climbing.")]
     public float horizontalJumpForce = 500f;
 }
+
 
 [System.Serializable]
 public class PlayerSystemVariables
@@ -873,6 +988,7 @@ public class PlayerSystemVariables
     public float randomJumpSoundPitchFluctuation = 0.05f;
     [HideInInspector]
     public float jumpSoundSequencePitchIncrease = 0.1f;
+
 
     [Space]
     [Header("Particles")]
