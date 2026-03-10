@@ -618,6 +618,7 @@ public class PlayerController : MonoBehaviour
             jumpsSinceGroundTouch = 0;
             isCharging = true;
             jumpChargeTimer = 0;
+            SetAnimatorBool("charging", true);
         }
     }
 
@@ -646,7 +647,6 @@ public class PlayerController : MonoBehaviour
         isJumping = false;
         rigidbody2D.gravityScale = currentMovementState.fallGravity;
         lastJumpDuration = Time.time - lastJumpTime;
-        ResetAnimatorTrigger("jump");
     }
 
     // CHARGE JUMP METHOD
@@ -673,6 +673,7 @@ public class PlayerController : MonoBehaviour
         lastJumpTime = Time.time;
         jumpsSinceGroundTouch++;
         SetAnimatorTrigger("jump");
+        SetAnimatorBool("charging", false);
         PlaySfx(jumpSound, Random.Range(0.9f, 1.1f));
     }
 

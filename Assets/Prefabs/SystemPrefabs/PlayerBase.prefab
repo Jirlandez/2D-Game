@@ -25025,6 +25025,7 @@ MonoBehaviour:
     crouchFriction: 0.01
     crouchGravity: 7
   canSwim: 1
+  fallDeath: 10
   jumpValues:
     jumpForce: 600
     jumpGravity: 1.5
@@ -25061,9 +25062,6 @@ MonoBehaviour:
     leftWallChecker: {fileID: 7858304113157618097}
     rightWallChecker: {fileID: 2132498734718651540}
     spritesParent: {fileID: 2880616188729638454}
-    animators:
-    - {fileID: 1548558054960678074}
-    - {fileID: 7502393371493437131}
     flipSprites:
     - {fileID: 1875299212212567096}
     waitToResetCameraAfterDeath: 2
@@ -25077,6 +25075,8 @@ MonoBehaviour:
     leftWallSlideParticle: {fileID: 2066035337150049961}
     rightWallSlideParticle: {fileID: 6291853942016181724}
     deathParticlePrefab: {fileID: 4678744755172843596, guid: 0c630cc7bf50f483cbb1b817147e3606, type: 3}
+  maxChargeTime: 1
+  minCharge: 0.3
 --- !u!61 &9093523201345950137
 BoxCollider2D:
   m_ObjectHideFlags: 0
