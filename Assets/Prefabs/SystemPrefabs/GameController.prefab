@@ -12,6 +12,38 @@ PrefabInstance:
       propertyPath: smoothTime
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3629769258409223216, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: Mute
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629769258409223216, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: m_Pitch
+      value: -3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629769258409223216, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: Priority
+      value: 256
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629769258409223216, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: m_Volume
+      value: 0.03
+      objectReference: {fileID: 0}
+    - target: {fileID: 3629769258409223216, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: panLevelCustomCurve.m_Curve.Array.data[0].value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4936878064803920571, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: Priority
+      value: 94
+      objectReference: {fileID: 0}
+    - target: {fileID: 4936878064803920571, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 8300000, guid: aca9584b58c69bc4286a814be6c5b24a, type: 3}
+    - target: {fileID: 4936878064803920571, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
+      propertyPath: m_PlayOnAwake
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4967035013579036022, guid: 9422e70dcbc11491db7b5064145eb8c1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
