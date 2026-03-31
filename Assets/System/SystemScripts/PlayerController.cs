@@ -172,7 +172,6 @@ public class PlayerController : MonoBehaviour
             Input.GetAxisRaw("Vertical")
         );
 
-        // The Charge Jump!
         if (isCharging)
         {
             jumpChargeTimer += Time.deltaTime;
@@ -218,7 +217,7 @@ public class PlayerController : MonoBehaviour
         CheckWallStates(moveDirection);
         DetermineMovementState();
 
-        // This is the slowdown for charging a jump
+       
         if (controlEnabled && isCharging)
         {
             rigidbody2D.linearVelocityX *= 0.85f;
@@ -569,7 +568,7 @@ public class PlayerController : MonoBehaviour
     //     }
     // }
 
-    // charge jump 
+
     public void JumpButtonPressed()
     {
         if (!controlEnabled) return;
@@ -600,7 +599,7 @@ public class PlayerController : MonoBehaviour
     //     ResetAnimatorTrigger("jump");
     // }
 
-    // charge jump again
+ 
     public void JumpButtonReleased()
     {
         if (isCharging)
