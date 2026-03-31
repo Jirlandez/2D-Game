@@ -92,12 +92,9 @@ public class PlayerController : MonoBehaviour
     // Movement
     private PlayerMovementValues currentMovementState;
     private bool isInWater = false;
-    private bool wasInWater = false;
-    private Vector3 previousPosition;
     private float highestPosition;
-    private bool firstTime = true;
 
-    // CHARGE JUMP - Comment out to disable
+    // Charge Jump stuff for changing
     [Tooltip("The maximum amount of time until a full jump is charged.")]
     public float maxChargeTime = 1.0f;
     [Tooltip("The minimum strength a jump can be.")]
@@ -175,7 +172,7 @@ public class PlayerController : MonoBehaviour
             Input.GetAxisRaw("Vertical")
         );
 
-        // CHARGE JUMP
+        // The Charge Jump!
         if (isCharging)
         {
             jumpChargeTimer += Time.deltaTime;
@@ -194,16 +191,6 @@ public class PlayerController : MonoBehaviour
 
 
         CheckIfCrouching();
-
-        if (IsFalling())
-        {
-            if(transform.position.y < previousPosition.y && firstTime)
-            {
-                firstTime = false;
-                highestPosition = transform.position.y;
-            }
-            previousPosition = transform.position;
-        }
 
         if (!IsOnGround())
         {
@@ -231,7 +218,7 @@ public class PlayerController : MonoBehaviour
         CheckWallStates(moveDirection);
         DetermineMovementState();
 
-        // CHARGE JUMP - slow down while charging
+        // This is the slowdown for charging a jump
         if (controlEnabled && isCharging)
         {
             rigidbody2D.linearVelocityX *= 0.85f;
@@ -347,11 +334,10 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (isInWater && !wasInWater)
+        if (isInWater)
         {
             highestPosition = transform.position.y;
         }
-        wasInWater = isInWater;
 
         if (onGroundLastFrame && !isOnGround)
         {
@@ -372,7 +358,6 @@ public class PlayerController : MonoBehaviour
                 Respawn();
             }
 
-            firstTime = true;
             highestPosition = transform.position.y;
         }
     }
@@ -392,22 +377,6 @@ public class PlayerController : MonoBehaviour
 
     private void CheckWallStates(Vector2 moveDirection)
     {
-        // Use cached isOnGround to avoid corner issues where IsOnGround() briefly returns false
-        if (isOnGround)
-        {
-            onWallLeft = false;
-            onWallRight = false;
-            return;
-        }
-
-        // CHARGE JUMP - skip wall detection while charging to prevent corner sticking
-        if (isCharging)
-        {
-            onWallLeft = false;
-            onWallRight = false;
-            return;
-        }
-
         bool wasOnWallLeft = onWallLeft;
         Physics2D.queriesHitTriggers = false;
         Vector3 worldCenter = systemVariables.leftWallChecker.transform.TransformPoint(systemVariables.leftWallChecker.offset);
@@ -454,10 +423,9 @@ public class PlayerController : MonoBehaviour
 
     private bool IsTryingToStop(Vector2 moveDirection)
     {
-        if (isCharging) return false;
         if (!IsOnWall() && moveDirection == Vector2.zero) return true;
-        if (!isOnGround && onWallLeft && moveDirection.x < -0.1f) return true;
-        if (!isOnGround && onWallRight && moveDirection.x > 0.1f) return true;
+        if (!IsOnGround() && onWallLeft && moveDirection.x < -0.1f) return true;
+        if (!IsOnGround() && onWallRight && moveDirection.x > 0.1f) return true;
         return false;
     }
 
@@ -592,7 +560,7 @@ public class PlayerController : MonoBehaviour
 
  
     // --------- Input ---------
-    // ORIGINAL JUMP (commented out for charge jump):
+    // The og jump
     // public void JumpButtonPressed()
     // {
     //     if (controlEnabled)
@@ -601,7 +569,7 @@ public class PlayerController : MonoBehaviour
     //     }
     // }
 
-    // CHARGE JUMP
+    // charge jump 
     public void JumpButtonPressed()
     {
         if (!controlEnabled) return;
@@ -623,7 +591,7 @@ public class PlayerController : MonoBehaviour
     }
 
 
-    // ORIGINAL JUMP (commented out for charge jump):
+    // original jump
     // public void JumpButtonReleased()
     // {
     //     isJumping = false;
@@ -632,7 +600,7 @@ public class PlayerController : MonoBehaviour
     //     ResetAnimatorTrigger("jump");
     // }
 
-    // CHARGE JUMP
+    // charge jump again
     public void JumpButtonReleased()
     {
         if (isCharging)
@@ -649,7 +617,6 @@ public class PlayerController : MonoBehaviour
         lastJumpDuration = Time.time - lastJumpTime;
     }
 
-    // CHARGE JUMP METHOD
     private void DoChargeJump()
     {
         DetermineJumpValues(); 
